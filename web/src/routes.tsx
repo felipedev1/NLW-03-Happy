@@ -3,6 +3,7 @@ import { BrowserRouter, Switch, Route } from 'react-router-dom'
 
 import Landing from './pages/Landing'
 import OrphanagesMap from './pages/OrphanagesMap'
+import CreateOrphanage from './pages/CreateOrphanage'
 
 function Routes() {
   return (
@@ -10,6 +11,7 @@ function Routes() {
       <Switch>
         <Route exact path="/" component={Landing} />
         <Route exact path="/app" component={OrphanagesMap} />
+        <Route exact path="/orphanages/create" component={CreateOrphanage} />
       </Switch>
     </BrowserRouter>
   )
