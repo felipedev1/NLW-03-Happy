@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { RectButton } from 'react-native-gesture-handler';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker'
+import { TextInputMask } from 'react-native-masked-text'
 
 import api from '../../services/api';
 
@@ -25,12 +26,14 @@ export default function OrphanageData() {
   const [instructions, setInstructions] = useState('')
   const [opening_hours, setOpeningHours] = useState('')
   const [open_on_weekends, setOpenOnWeekends] = useState(true)
+  const [whatsapp, setWhatsapp] = useState('')
   const [images, setImages] = useState<string[]>([])
 
+  
   async function handleSelectImages() {
     const { status } = await ImagePicker.requestCameraRollPermissionsAsync()
 
-    if(status !== 'granted') {
+    if (status !== 'granted') {
       alert('Eita, precisamos de acesso às suas fotos...');
       return;
     }
@@ -41,7 +44,7 @@ export default function OrphanageData() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images
     })
 
-    if(result.cancelled) {
+    if (result.cancelled) {
       return;
     }
 
@@ -53,6 +56,9 @@ export default function OrphanageData() {
   async function handleCreateOrphanage() {
     const { latitude, longitude } = position
 
+    //only Brazil
+    const noFormatWhatsapp = "+55" + whatsapp.replace(/\s/g, "").replace("(", "").replace(")", "").replace("-", "")
+
     const data = new FormData()
 
     data.append('name', name)
@@ -62,6 +68,7 @@ export default function OrphanageData() {
     data.append('instructions', instructions)
     data.append('opening_hours', opening_hours)
     data.append('open_on_weekends', String(open_on_weekends))
+    data.append('whatsapp', String(noFormatWhatsapp))
     images.forEach((image, index) => {
       data.append('images', {
         name: `image_${index}.jpg`,
@@ -96,10 +103,18 @@ export default function OrphanageData() {
         onChangeText={setAbout}
       />
 
-      {/* <Text style={styles.label}>Whatsapp</Text>
-      <TextInput
+      <Text style={styles.label}>Número de Whatsapp</Text>
+      <TextInputMask
+        type={'cel-phone'}
         style={styles.input}
-      /> */}
+        options={{
+          maskType: 'BRL',
+          withDDD: true,
+          dddMask: '(99) '
+        }}
+        value={whatsapp}
+        onChangeText={(text: string) =>setWhatsapp(text)}
+      />
 
       <Text style={styles.label}>Fotos</Text>
       <View style={styles.uploadedImagesContainer}>
@@ -136,8 +151,8 @@ export default function OrphanageData() {
 
       <View style={styles.switchContainer}>
         <Text style={styles.label}>Atende final de semana?</Text>
-        <Switch 
-          thumbColor="#fff" 
+        <Switch
+          thumbColor="#fff"
           trackColor={{ false: '#ccc', true: '#39CC83' }}
           value={open_on_weekends}
           onValueChange={setOpenOnWeekends}
