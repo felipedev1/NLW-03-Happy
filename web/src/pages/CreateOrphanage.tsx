@@ -2,13 +2,19 @@ import React, { ChangeEvent, FormEvent, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { Map, Marker, TileLayer } from 'react-leaflet';
 import { LeafletMouseEvent } from "leaflet";
+import InputMask from 'react-input-mask'
 
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiX } from "react-icons/fi";
 
 import '../styles/pages/create-orphanage.css';
 import Sidebar from "../components/Sidebar";
 import mapIcon from "../utils/mapIcon";
 import api from "../services/api";
+
+interface ImagesPreviewModel {
+  blob: string;
+  image: File;
+}
 
 export default function CreateOrphanage() {
   const history = useHistory()
@@ -19,8 +25,9 @@ export default function CreateOrphanage() {
   const [instructions, setInstructions] = useState('')
   const [opening_hours, setOpeningHours] = useState('')
   const [open_on_weekends, setOpenOnWeekends] = useState(true)
+  const [whatsapp, setWhatsapp] = useState('')
   const [images, setImages] = useState<File[]>([])
-  const [imagesPreview, setImagesPreview] = useState<string[]>([])
+  const [imagesPreview, setImagesPreview] = useState<ImagesPreviewModel[]>([])
 
   function handleMapClick(event: LeafletMouseEvent) {
 
@@ -42,16 +49,36 @@ export default function CreateOrphanage() {
     setImages(prev => [...prev, ...selectedImages]); 
 
     const selectedImagesPreview = selectedImages.map(image => {
-      return URL.createObjectURL(image)
+      return {
+        blob: URL.createObjectURL(image),
+        image: image
+      }
     })
 
     setImagesPreview(prev => [...prev, ...selectedImagesPreview])
+  }
+
+  function handleDropImagePreview(imageDroped: ImagesPreviewModel) {
+    const newPreviewImages = imagesPreview.filter(imagePreview => {
+      return imagePreview.blob !== imageDroped.blob
+    })
+
+    setImagesPreview(newPreviewImages)
+
+    const newImages = images.filter(image => {
+  
+      return image != imageDroped.image
+    })
+
+    setImages(newImages)
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
     const { latitude, longitude } = position
+
+    const noFormatWhatsapp = whatsapp.replace(/\s/g, "").replace("(", "").replace(")", "")
 
     const data = new FormData()
 
@@ -62,6 +89,7 @@ export default function CreateOrphanage() {
     data.append('instructions', instructions)
     data.append('opening_hours', opening_hours)
     data.append('open_on_weekends', String(open_on_weekends))
+    data.append('whatsapp', String(noFormatWhatsapp))
     images.forEach(image => {
       data.append('images', image)
     })
@@ -121,12 +149,28 @@ export default function CreateOrphanage() {
             </div>
 
             <div className="input-block">
+              <label htmlFor="whatsapp">Número de Whatsapp</label>
+              <InputMask
+                mask="+99 (99) 9 9999 9999"
+                maskChar={null}
+                id="whatsapp" 
+                value={whatsapp} 
+                onChange={(e) => setWhatsapp(e.target.value)}
+              />
+            </div>
+
+            <div className="input-block">
               <label htmlFor="images">Fotos</label>
 
               <div className="images-container">
                 {imagesPreview.map(image => {
                   return (
-                    <img key={image} src={image} alt={name} />
+                    <div key={image.blob} className="image-block">
+                      <img src={image.blob} alt={name} />
+                      <button className="drop-image" onClick={() => handleDropImagePreview(image)} >
+                        <FiX color="#FF669D" size={24} />
+                      </button>
+                    </div>
                   )
                 })}
 
